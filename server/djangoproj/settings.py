@@ -28,17 +28,14 @@ SECRET_KEY =\
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    'pauloralus-8000.theianext-0-labs-prod-misc-tools-us-east-0.proxy.cognitiveclass.ai'
-    
-]
+ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
+    'https://*.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai',
+    'http://*.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai',
+    'https://pauloralus-8000.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
-    'https://pauloralus-8000.theianext-0-labs-prod-misc-tools-us-east-0.proxy.cognitiveclass.ai'
 ]
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [],
