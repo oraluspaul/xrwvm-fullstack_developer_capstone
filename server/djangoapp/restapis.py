@@ -8,24 +8,30 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# FIXED: Removed "http://" from the beginning since the URL already has "https://"
+# Get backend URLs from environment variables
 backend_url = os.getenv(
     'backend_url', 
     default="https://pauloralus-3030.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai")
 
 sentiment_analyzer_url = os.getenv(
     'sentiment_analyzer_url',
-    default="http://localhost:5050/")
+    default="https://sentianalyzer.234fsqgpn0wp.us-south.codeengine.appdomain.cloud/")
 
 
 def get_request(endpoint, **kwargs):
     """
     Make a GET request to the backend API
+    
     Args:
-        endpoint: API endpoint to call
+        endpoint (str): API endpoint to call (e.g., "/fetchDealers")
         **kwargs: URL parameters as keyword arguments
+        
     Returns:
-        JSON response from the API
+        dict: JSON response from the API, or None if error occurs
+        
+    Example:
+        get_request("/fetchDealers")
+        get_request("/fetchDealer", id="1")
     """
     params = ""
     if kwargs:
@@ -40,19 +46,25 @@ def get_request(endpoint, **kwargs):
         # Call get method of requests library with URL and parameters
         response = requests.get(request_url)
         return response.json()
-    except:
+    except Exception as err:
         # If any error occurs
-        print("Network exception occurred")
+        print(f"Network exception occurred: {err}")
         return None
 
 
 def analyze_review_sentiments(text):
     """
     Analyze sentiment of review text using microservice
+    
     Args:
-        text: Review text to analyze
+        text (str): Review text to analyze
+        
     Returns:
-        JSON response with sentiment (positive/negative/neutral)
+        dict: JSON response with sentiment (positive/negative/neutral)
+        
+    Example:
+        analyze_review_sentiments("Great service!")
+        # Returns: {"sentiment": "positive"}
     """
     request_url = sentiment_analyzer_url + "analyze/" + text
     
@@ -69,10 +81,30 @@ def analyze_review_sentiments(text):
 def post_review(data_dict):
     """
     Post a review to the backend API
+    
     Args:
-        data_dict: Dictionary containing review data
+        data_dict (dict): Dictionary containing review data with keys:
+            - dealership: Dealer ID
+            - review: Review text
+            - purchase: Boolean indicating if purchase was made
+            - purchase_date: Date of purchase (if applicable)
+            - car_make: Car make
+            - car_model: Car model
+            - car_year: Car year
+            
     Returns:
-        JSON response from the API
+        dict: JSON response from the API, or None if error occurs
+        
+    Example:
+        post_review({
+            "dealership": 1,
+            "review": "Excellent service!",
+            "purchase": True,
+            "purchase_date": "2024-11-24",
+            "car_make": "Toyota",
+            "car_model": "Camry",
+            "car_year": 2023
+        })
     """
     request_url = backend_url + "/insert_review"
     
@@ -80,6 +112,6 @@ def post_review(data_dict):
         response = requests.post(request_url, json=data_dict)
         print(response.json())
         return response.json()
-    except:
-        print("Network exception occurred")
+    except Exception as err:
+        print(f"Network exception occurred: {err}")
         return None

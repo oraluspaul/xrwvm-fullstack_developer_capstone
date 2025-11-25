@@ -41,11 +41,13 @@ def login_user(request):
         data = {"userName": username, "status": "Authenticated"}
     return JsonResponse(data)
 
+
 # Create a `logout_request` view to handle sign out request
 def logout_request(request):
     logout(request)
     data = {"userName": ""}
     return JsonResponse(data)
+
 
 # Create a `registration` view to handle sign up request
 @csrf_exempt
@@ -84,6 +86,7 @@ def get_cars(request):
     """
     View to get all cars from the database
     If the database is empty, it will populate it with initial data
+    Returns car makes and models in format expected by frontend
     """
     count = CarMake.objects.filter().count()
     print(count)
@@ -91,22 +94,34 @@ def get_cars(request):
     if count == 0:
         initiate()
     
-    car_models = CarModel.objects.select_related('car_make')
-    cars = []
-    
-    for car_model in car_models:
-        cars.append({
-            "CarModel": car_model.name,
-            "CarMake": car_model.car_make.name
+    # Get all car makes
+    car_makes = CarMake.objects.all()
+    makes_list = []
+    for make in car_makes:
+        makes_list.append({
+            "id": make.id,
+            "name": make.name
         })
     
-    return JsonResponse({"CarModels": cars})
+    # Get all car models with their makes
+    car_models = CarModel.objects.select_related('car_make').all()
+    models_list = []
+    for car_model in car_models:
+        models_list.append({
+            "id": car_model.id,
+            "name": car_model.name,
+            "make": car_model.car_make.name,
+            "make_id": car_model.car_make.id,
+            "year": car_model.year
+        })
+    
+    return JsonResponse({
+        "CarMakes": makes_list,
+        "CarModels": models_list
+    })
 
 
-
-# # Update the `get_dealerships` view to render the index page with
-# a list of dealerships
-# def get_dealerships(request):
+# Update the `get_dealerships` view to render the index page with a list of dealerships
 def get_dealerships(request, state="All"):
     """
     Get list of dealerships, optionally filtered by state
@@ -125,8 +140,34 @@ def get_dealerships(request, state="All"):
     
     return JsonResponse({"status": 200, "dealers": dealerships})
 
+
+# Create a `get_dealer_details` view to render the dealer details
+def get_dealer_details(request, dealer_id):
+    """
+    Get details for a specific dealer
+    Args:
+        request: HTTP request object
+        dealer_id: ID of the dealer
+    Returns:
+        JSON response with dealer details
+    """
+    if dealer_id:
+        endpoint = "/fetchDealer/" + str(dealer_id)
+        dealership = get_request(endpoint)
+        
+        # FIXED: Backend returns array, extract first dealer
+        if dealership and isinstance(dealership, list) and len(dealership) > 0:
+            return JsonResponse({"status": 200, "dealer": dealership[0]})
+        elif dealership and isinstance(dealership, dict):
+            # If backend returns single object instead of array
+            return JsonResponse({"status": 200, "dealer": dealership})
+        else:
+            return JsonResponse({"status": 404, "message": "Dealer not found"})
+    else:
+        return JsonResponse({"status": 400, "message": "Bad Request"})
+
+
 # Create a `get_dealer_reviews` view to render the reviews of a dealer
-# def get_dealer_reviews(request,dealer_id):
 def get_dealer_reviews(request, dealer_id):
     """
     Get reviews for a specific dealer with sentiment analysis
@@ -139,6 +180,10 @@ def get_dealer_reviews(request, dealer_id):
     if dealer_id:
         endpoint = "/fetchReviews/dealer/" + str(dealer_id)
         reviews = get_request(endpoint)
+        
+        # Handle case where reviews might be None
+        if not reviews:
+            reviews = []
         
         # Analyze sentiment for each review
         for review_detail in reviews:
@@ -158,26 +203,8 @@ def get_dealer_reviews(request, dealer_id):
     else:
         return JsonResponse({"status": 400, "message": "Bad Request"})
 
-# Create a `get_dealer_details` view to render the dealer details
-# def get_dealer_details(request, dealer_id):
-def get_dealer_details(request, dealer_id):
-    """
-    Get details for a specific dealer
-    Args:
-        request: HTTP request object
-        dealer_id: ID of the dealer
-    Returns:
-        JSON response with dealer details
-    """
-    if dealer_id:
-        endpoint = "/fetchDealer/" + str(dealer_id)
-        dealership = get_request(endpoint)
-        return JsonResponse({"status": 200, "dealer": dealership})
-    else:
-        return JsonResponse({"status": 400, "message": "Bad Request"})
 
 # Create a `add_review` view to submit a review
-# def add_review(request):
 @csrf_exempt
 def add_review(request):
     """
